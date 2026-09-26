@@ -17,7 +17,7 @@ REQUIRED = {
     "visual": ["avatar", "color", "icon", "defaultLabel"],
 }
 RATIONAL_EXTRA = {"reasoning": ["canChallenge", "partialAgreement", "openingMove", "coreConviction"]}
-# 性格和风格由用户在讨论时挑选，人物文件里不能预设
+# 性格由用户在讨论时挑选，人物文件里不能预设
 FORBIDDEN = ["personality", "selectedTraits", "personalityOptions", "communicationStyle", "sampleLines", "traitBehaviors"]
 ENGINE_WORDS = ["轮流", "第几轮", "下一位", "发言顺序", "读取几条", "几条消息", "nextSpeaker", "turnOrder", "round"]
 
@@ -62,7 +62,7 @@ def check(path, seen):
     text = json.dumps(p, ensure_ascii=False)
     for k in FORBIDDEN:
         if f'"{k}"' in text:
-            errs.append(f"人物文件不应包含 {k}：性格和风格由用户在讨论时选择")
+            errs.append(f"人物文件不应包含 {k}：性格由用户在讨论时选择")
     color = p.get("visual", {}).get("color", "")
     if color and not re.fullmatch(r"#[0-9A-Fa-f]{6}", color):
         errs.append(f"color 格式应为 #RRGGBB：{color}")

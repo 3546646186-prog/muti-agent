@@ -81,9 +81,8 @@ export interface Participant {
   isLead?: boolean;
   personalityId: string;
   persona: Persona;
-  /** 理性讨论：用户为这个人物选的 1 到 3 个行为性格和 1 个说话风格 */
-  traits?: string[];
-  style?: string;
+  /** 理性讨论：用户为这个人物选的性格 */
+  personality?: string;
 }
 
 export interface SessionConfig {

@@ -1,12 +1,12 @@
 """简单讨论引擎：用户给一个问题，几个人物轮流调用大模型讨论，最后由主持人总结。
 
 用法：
-  python 讨论引擎.py "问题" --人物 老苏:好奇,怀疑:温和狡猾 阿澜:乐观:轻快好奇 灰先生:怀疑,幽默:冷幽默
+  python 讨论引擎.py "问题" --人物 老苏:温和狡猾 阿澜:轻快好奇 灰先生:冷幽默
   python 讨论引擎.py "问题" --人物 ... --轮数 3 --字数 150
   python 讨论引擎.py "问题" --试跑                            # 不调用模型，只检查流程
 
-每个人物都要写成 人物:性格1,性格2:风格。角色没有默认性格和风格；
-角色决定知识和看问题的角度，性格和风格决定态度和说话方式。
+每个人物都要写成 人物:性格。角色没有默认性格；
+角色决定知识和看问题的角度，性格决定态度和说话方式。
 不写 --人物 时，使用下面 DEMO 里的一组示例搭配。
 
 模型配置：复制 模型配置.示例.json 为 模型配置.json，填好 base_url、model、api_key。
@@ -28,7 +28,7 @@ from 组装提示词 import build, _find_persona  # noqa: E402
 
 RECENT = 4  # 每次调用带上最近几条发言原文
 MAX_TURNS = 2  # 交锋轮里每人最多发言几次，避免两个人一直对吵
-DEMO = ["老苏:好奇,怀疑:温和狡猾", "阿澜:好奇,乐观:轻快好奇", "灰先生:怀疑,幽默:冷幽默"]
+DEMO = ["老苏:温和狡猾", "阿澜:轻快好奇", "灰先生:冷幽默"]
 sys.stdout.reconfigure(line_buffering=True)  # 不加 -u 也能实时看到输出
 
 MODERATOR = """你是一场理性讨论的中立主持人，不偏向任何一方。
@@ -147,17 +147,17 @@ def user_message(question, others, summary, log, task):
 
 
 def parse_setting(s):
-    """灰先生:怀疑,谨慎:毒舌 -> ("灰先生", ["怀疑","谨慎"], "毒舌")"""
-    parts = s.replace("：", ":").replace("，", ",").split(":")
-    if len(parts) != 3 or not parts[1] or not parts[2]:
-        raise SystemExit(f"“{s}”格式不对，应写成 人物:性格1,性格2:风格，例如 灰先生:怀疑,幽默:冷幽默")
-    return parts[0], parts[1].split(","), parts[2]
+    """灰先生:毒舌 -> ("灰先生", "毒舌")"""
+    parts = s.replace("：", ":").split(":")
+    if len(parts) != 2 or not parts[1]:
+        raise SystemExit(f"“{s}”格式不对，应写成 人物:性格，例如 灰先生:冷幽默")
+    return parts[0], parts[1]
 
 
 def main():
     ap = argparse.ArgumentParser(description="简单讨论引擎")
     ap.add_argument("问题", nargs="?")
-    ap.add_argument("--人物", nargs="+", default=DEMO, dest="people", help="人物:性格1,性格2:风格")
+    ap.add_argument("--人物", nargs="+", default=DEMO, dest="people", help="人物:性格")
     ap.add_argument("--轮数", type=int, default=3, dest="rounds")
     ap.add_argument("--字数", type=int, default=150, dest="max_chars")
     ap.add_argument("--试跑", action="store_true", dest="dry")
@@ -170,17 +170,17 @@ def main():
         raise SystemExit("轮数至少为 2（开场和收尾）。")
 
     members = []
-    for n, traits, style in map(parse_setting, a.people):
+    for n, personality in map(parse_setting, a.people):
         persona, _ = _find_persona(n)
-        system = build(n, traits, style, a.max_chars)  # 名称不对时在这里报错
+        system = build(n, personality, a.max_chars)  # 名称不对时在这里报错
         members.append({"name": persona["name"], "role": persona["identity"]["role"],
-                        "traits": traits, "style": style, "system": system})
+                        "personality": personality, "system": system})
 
     cfg = None if a.dry else load_config()
     log, summary = [], "讨论刚开始。"
     print(f"\n议题：{question}")
     for m in members:
-        print(f"  {m['name']}（{m['role']}）性格：{'、'.join(m['traits'])}  风格：{m['style']}")
+        print(f"  {m['name']}（{m['role']}）性格：{m['personality']}")
 
     def speak(m, rnd, stage):
         others = "、".join(f"{o['name']}（{o['role']}）" for o in members if o is not m)
@@ -235,7 +235,7 @@ def main():
     out.mkdir(exist_ok=True)
     f = out / (time.strftime("%Y%m%d-%H%M%S") + ".json")
     f.write_text(json.dumps({"question": question, "model": cfg["model"] if cfg else "试跑",
-                             "members": [{k: m[k] for k in ("name", "role", "traits", "style")} for m in members],
+                             "members": [{k: m[k] for k in ("name", "role", "personality")} for m in members],
                              "rounds": a.rounds, "maxChars": a.max_chars, "log": log, "summary": final},
                             ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n记录已保存：{f.relative_to(ROOT)}")

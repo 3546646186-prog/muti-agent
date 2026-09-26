@@ -15,7 +15,7 @@ export interface Draft {
 }
 
 export default function App() {
-  // 1 主题 · 轮数 → 2 人物 · 性格 · 风格 → 3 圆桌讨论（只做理性讨论，人物来自 backend 人格数据库）
+  // 1 主题 · 轮数 → 2 人物 · 性格 → 3 圆桌讨论（只做理性讨论，人物来自 backend 人格数据库）
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [draft, setDraft] = useState<Draft>({ mode: 'rational', theme: '', sceneId: 'roundtable', rounds: 3, maxChars: 150 });
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -35,7 +35,7 @@ export default function App() {
             <span className="logo">理性讨论圆桌</span>
           </div>
           <ol className="steps">
-            {['主题 · 轮数', '人物 · 性格 · 风格', '讨论'].map((s, i) => (
+            {['主题 · 轮数', '人物 · 性格', '讨论'].map((s, i) => (
               <li key={s} className={codex ? '' : step === i + 1 ? 'on' : step > i + 1 ? 'done' : ''}>
                 <span>{i + 1}</span>{s}
               </li>

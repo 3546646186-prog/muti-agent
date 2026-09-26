@@ -1,7 +1,7 @@
 """把人物 JSON 和性格库编译成提示词文件。修改 JSON 后重新运行本脚本。
 
 用法：python 生成提示词.py
-输出：提示词/角色/*.md、提示词/性格/*.md、提示词/风格/*.md
+输出：提示词/角色/*.md、提示词/性格/*.md
 """
 import json
 from pathlib import Path
@@ -28,7 +28,7 @@ def role_md(p):
 
 你是{p['name']}，讨论中的{i['role']}，身份是{i['profession']}。{p['description']}。
 
-这份资料只决定你知道什么、从什么角度看问题、坚持什么。你的语气、态度和说话方式由后面的行为性格和说话风格决定。
+这份资料只决定你知道什么、从什么角度看问题、坚持什么。你的态度和说话方式由后面的性格决定。
 
 ## 你在讨论中负责
 
@@ -87,19 +87,16 @@ def role_md(p):
 """
 
 
-def trait_md(t):
-    return f"""# 行为性格：{t['name']}
-
-你在讨论中表现出“{t['name']}”：{t['summary']}。具体做法：
-
-{bullets(t['behaviors'])}
-"""
-
-
-def style_md(s):
-    return f"""# 说话风格：{s['name']}
+def personality_md(s):
+    return f"""# 性格：{s['name']}
 
 {s['description']}
+
+讨论时的做法：
+
+{bullets(s['behaviors'])}
+
+说话方式：
 
 - {LENGTH[s['sentenceLength']]}。
 - {LEVEL[s['colloquial']]}。
@@ -111,7 +108,7 @@ def style_md(s):
 
 {bullets(s['mustDo'])}
 
-说话风格只影响语气和用词，不改变你的观点、价值判断和知识边界。但它必须在每次发言里听得出来：别人不看名字，也应该能认出是你在说话。
+性格不改变你的观点、价值判断和知识边界，但要在每次发言里听得出来：别人不看名字，也应该能认出是你在说话。
 """
 
 
@@ -125,10 +122,8 @@ def main():
     for f in sorted((ROOT / "人物").rglob("*.json")):
         p = load(f)["persona"]
         write(OUT / "角色" / f.relative_to(ROOT / "人物").with_suffix(".md"), role_md(p))
-    for t in load(ROOT / "性格库" / "行为性格.json")["traits"]:
-        write(OUT / "性格" / (t["name"] + ".md"), trait_md(t))
-    for s in load(ROOT / "性格库" / "说话风格.json")["styles"]:
-        write(OUT / "风格" / (s["name"] + ".md"), style_md(s))
+    for s in load(ROOT / "性格库" / "性格.json")["personalities"]:
+        write(OUT / "性格" / (s["name"] + ".md"), personality_md(s))
 
 
 if __name__ == "__main__":

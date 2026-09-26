@@ -7,9 +7,8 @@ export interface ApiPersona {
   judgmentFocus: string[];
   raw: Record<string, unknown>;
 }
-export interface Trait { id: string; name: string; summary: string }
-export interface Style { id: string; name: string; description: string }
-export interface Options { personas: ApiPersona[]; traits: Trait[]; styles: Style[]; dryRun: boolean; model: string | null; configError: string | null }
+export interface Personality { id: string; name: string; description: string }
+export interface Options { personas: ApiPersona[]; personalities: Personality[]; dryRun: boolean; model: string | null; configError: string | null }
 
 const HAIR = ['#2b2136', '#6b4a3a', '#6b6272', '#3d3550', '#8a5a3c'];
 const HAIR_STYLE = ['short', 'long', 'bun', 'short', 'cap'] as const;
@@ -20,7 +19,7 @@ export function toPersona(p: ApiPersona, i: number): Persona {
     id: p.id, name: p.name, modes: ['rational'],
     identity: p.role + ' · ' + p.profession,
     knowledge: p.domains, thinking: p.tradition, values: p.coreValues.join('、'),
-    personalities: [{ id: 'custom', label: '开场前自选性格和风格', behavior: p.coreConviction, style: '' }],
+    personalities: [{ id: 'custom', label: '开场前自选性格', behavior: p.coreConviction, style: '' }],
     defaultPersonalityId: 'custom',
     boundaries: [],
     visual: { skin: i % 2 ? '#f3d2b3' : '#f1c9a5', hair: HAIR[i % HAIR.length], shirt: p.color, accent: '#fbf5e4', hairStyle: HAIR_STYLE[i % 5] },
@@ -29,7 +28,7 @@ export function toPersona(p: ApiPersona, i: number): Persona {
 }
 
 let cache: Promise<Options> | null = null;
-/** 人物、性格、风格只向后端要一次 */
+/** 人物、性格只向后端要一次 */
 export function loadOptions(): Promise<Options> {
   cache ??= fetch('/api/options').then((r) => {
     if (!r.ok) throw new Error(String(r.status));
@@ -37,4 +36,3 @@ export function loadOptions(): Promise<Options> {
   }).catch((e) => { cache = null; throw e; });
   return cache;
 }
-

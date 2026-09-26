@@ -258,7 +258,7 @@ export function DiscussionView({ config, onExit }: { config: SessionConfig; onEx
                 <span className="m-avatar"><PixelAvatar v={p.persona.visual} size={40} /></span>
                 <span className="m-info">
                   <strong>{p.isLead && '★'}{p.persona.name}{p.side && <i className={'side side-' + p.side}>{{ pro: '正', con: '反', host: '主' }[p.side]}</i>}</strong>
-                  <small>{p.traits?.length ? p.traits.join('、') + ' · ' + p.style : p.persona.personalities.find((x) => x.id === p.personalityId)?.label} · {count} 条</small>
+                  <small>{p.personality || p.persona.personalities.find((x) => x.id === p.personalityId)?.label} · {count} 条</small>
                   <em><b className="dot" />{STATE_LABEL[st.state]} · {st.action}</em>
                 </span>
               </button>
@@ -303,7 +303,7 @@ function PersonaStrip({ p, status }: { p: Participant; status?: Status }) {
       <PixelAvatar v={p.persona.visual} size={36} />
       <div>
         <b>{p.persona.identity}</b>
-        <small>性格：{p.traits?.length ? p.traits.join('、') + ' · ' + p.style : per?.label} · 知识：{p.persona.knowledge.join('/')} · 当前：{status?.action ?? '就座'}</small>
+        <small>性格：{p.personality || per?.label} · 知识：{p.persona.knowledge.join('/')} · 当前：{status?.action ?? '就座'}</small>
       </div>
     </div>
   );

@@ -74,7 +74,7 @@ export function createApiEngine(): DiscussionEngine {
       brief: cfg.theme.brief ?? '',
       rounds: cfg.maxRounds,
       maxChars: cfg.maxChars ?? 150,
-      members: cfg.participants.map((p) => ({ name: p.persona.name, traits: p.traits, style: p.style })),
+    members: cfg.participants.map((p) => ({ name: p.persona.name, personality: p.personality })),
     };
     const res = await fetch('/api/discuss', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctrl.signal,
@@ -129,4 +129,3 @@ export function createApiEngine(): DiscussionEngine {
     },
   };
 }
-

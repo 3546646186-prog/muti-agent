@@ -6,7 +6,7 @@
   python 服务.py --端口 9000
 
 接口：
-  GET  /api/options                 人物、性格、风格列表
+  GET  /api/options                 人物、性格列表
   POST /api/discuss                 开始一场讨论，用 SSE 逐条推送事件
   POST /api/discuss/<会话>/say      用户插话 {text, target}
   POST /api/discuss/<会话>/stop     停止
@@ -56,19 +56,17 @@ def options():
             "color": p.get("visual", {}).get("color", "#5f82b0"),
             "raw": p,
         })
-    traits = [{k: t[k] for k in ("id", "name", "summary", "behaviors")}
-              for t in _load(ROOT / "性格库" / "行为性格.json")["traits"]]
-    styles = [{k: s.get(k) for k in ("id", "name", "description", "habits")}
-              for s in _load(ROOT / "性格库" / "说话风格.json")["styles"]]
+    personalities = [{k: s.get(k) for k in ("id", "name", "description", "behaviors", "habits")}
+                     for s in _load(ROOT / "性格库" / "性格.json")["personalities"]]
     model, err = "试跑", None
     if not OPT["dry"]:
         try:
             model = E.load_config()["model"]
         except SystemExit as e:
             model, err = None, str(e)
-    return {"personas": personas, "traits": traits, "styles": styles, "dryRun": OPT["dry"],
+    return {"personas": personas, "personalities": personalities, "dryRun": OPT["dry"],
             "model": model, "configError": err,
-            "limits": {"members": [2, 5], "traits": [1, 3], "rounds": [2, 6], "maxChars": [50, 400]}}
+            "limits": {"members": [2, 5], "rounds": [2, 6], "maxChars": [50, 400]}}
 
 
 def prepare(body):
@@ -88,14 +86,14 @@ def prepare(body):
     for x in people:
         try:
             persona, _ = _find_persona(x.get("name", ""))
-            system = build(persona["name"], x.get("traits") or [], x.get("style") or "", max_chars)
+            system = build(persona["name"], x.get("personality") or "", max_chars)
         except SystemExit as e:
             raise ValueError(str(e))
         if persona["name"] in seen:
             raise ValueError(f"{persona['name']} 被选了两次。")
         seen.add(persona["name"])
         members.append({"name": persona["name"], "role": persona["identity"]["role"],
-                        "traits": list(x["traits"]), "style": x["style"], "system": system})
+                        "personality": x["personality"], "system": system})
     brief = str(body.get("brief", "")).strip()[:1000]
     return q, brief, members, rounds, max_chars
 
@@ -108,7 +106,7 @@ def run(question, brief, members, rounds, max_chars, emit, inbox, stop):
     log, summary, count = [], "讨论刚开始。", {m["name"]: 0 for m in members}
     emit({"type": "start", "question": question, "rounds": rounds, "maxChars": max_chars,
           "model": cfg["model"] if cfg else "试跑",
-          "members": [{k: m[k] for k in ("name", "role", "traits", "style")} for m in members]})
+          "members": [{k: m[k] for k in ("name", "role", "personality")} for m in members]})
 
     def call(m, msg, fake):
         if stop.is_set():
@@ -198,7 +196,7 @@ def run(question, brief, members, rounds, max_chars, emit, inbox, stop):
     out.mkdir(exist_ok=True)
     f = out / (time.strftime("%Y%m%d-%H%M%S") + ".json")
     f.write_text(json.dumps({"question": question, "brief": brief, "model": cfg["model"],
-                             "members": [{k: m[k] for k in ("name", "role", "traits", "style")} for m in members],
+                             "members": [{k: m[k] for k in ("name", "role", "personality")} for m in members],
                              "rounds": rounds, "maxChars": max_chars, "log": log, "summary": final},
                             ensure_ascii=False, indent=2), encoding="utf-8")
     return str(f.relative_to(ROOT))
